@@ -1,5 +1,7 @@
 # ember-async-await-helper
 
+[![Build Status](https://travis-ci.com/tildeio/ember-async-await-helper.svg?branch=master)](https://travis-ci.com/tildeio/ember-async-await-helper)
+
 Awaits a promise, then yields its result to a block. 👌
 
 ## Installation
