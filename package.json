@@ -5,9 +5,13 @@
   "keywords": [
     "ember-addon"
   ],
-  "repository": "",
+  "repository": "https://github.com/tildeio/ember-async-await-helper",
   "license": "MIT",
-  "author": "",
+  "author": "Tilde Engineering <engineering@tilde.io>",
+  "contributors": [
+    "Krystan HuffMenne <krystan@tilde.io>",
+    "Godfrey Chan <godfrey@tilde.io>"
+  ],
   "directories": {
     "doc": "doc",
     "test": "tests"
