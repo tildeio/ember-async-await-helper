@@ -1,0 +1,5 @@
+{{#if this.isResolved}}
+  {{yield this.resolvedValue}}
+{{else}}
+  {{yield to="inverse"}}
+{{/if}}
