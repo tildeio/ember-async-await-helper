@@ -28,6 +28,9 @@
     "ember-cli-babel": "^6.16.0",
     "ember-cli-htmlbars": "^3.0.0"
   },
+  "peerDependencies": {
+    "rsvp": ">= 1.0"
+  },
   "devDependencies": {
     "@ember/optional-features": "^0.6.3",
     "broccoli-asset-rev": "^2.7.0",

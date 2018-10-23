@@ -1,6 +1,8 @@
+import { VERSION } from '@ember/version';
 import Component from '@ember/component';
 import { bind } from '@ember/runloop';
 import Ember from 'ember';
+import RSVP from 'rsvp';
 import layout from '../templates/components/async-await';
 
 /**
@@ -21,6 +23,22 @@ function DEFAULT_REJECTION_HANDLER(reason) {
   } catch(error) {
     Ember.onerror(error);
   }
+}
+
+let hashProto;
+
+if (VERSION.startsWith('2.')) {
+  // Glimmer in older version of Ember does some weird things in creating an empty "hash",
+  // so we have to jump through some hoops to get the correct prototype.
+  hashProto = Object.getPrototypeOf(Ember.__loader.require('@glimmer/util').dict());
+} else {
+  // The `hash` helper creates an object with `Object.create(null)` which will have no
+  // prototype.
+  hashProto = null;
+}
+
+function isHash(value) {
+  return typeof value === 'object' && Object.getPrototypeOf(value) === hashProto;
 }
 
 /**
@@ -46,14 +64,14 @@ export default Component.extend({
   layout,
 
   /**
-    The promise to await on (passed as a positional argument).
+    The promise or hash of promises to await on (passed as a positional argument).
 
     @public
-    @property promise
+    @property argument
     @type any
     @required
   */
-  promise: UNINITIALIZED(),
+  argument: UNINITIALIZED(),
 
   /**
     A callback to run when the promise rejects. By default, it calls
@@ -70,7 +88,7 @@ export default Component.extend({
   onReject: DEFAULT_REJECTION_HANDLER,
 
   /**
-    The most-recently awaited promise.
+    The most-recently awaited argument.
 
     @private
     @property awaited
@@ -145,14 +163,14 @@ export default Component.extend({
 
   didReceiveAttrs() {
     this._super(...arguments);
-    this.didReceivePromise(this.promise);
+    this.didReceiveArgument(this.argument);
   },
 
-  didReceivePromise(promise) {
-    if (promise === this.awaited) { return; }
+  didReceiveArgument(argument) {
+    if (argument === this.awaited) { return; }
 
     this.setProperties({
-      awaited: promise,
+      awaited: argument,
       isPending: true,
       isSettled: false,
       isResolved: false,
@@ -161,14 +179,16 @@ export default Component.extend({
       rejectReason: UNINITIALIZED()
     });
 
-    Promise.resolve(promise).then(
-      bind(this, this.didResolve, promise),
-      bind(this, this.didReject, promise)
+    let target = isHash(argument) ? RSVP.hash(argument) : argument;
+
+    Promise.resolve(target).then(
+      bind(this, this.didResolve, argument),
+      bind(this, this.didReject, argument)
     );
   },
 
-  didResolve(resolvedPromise, value) {
-    if (this.shouldIgnorePromise(resolvedPromise)) { return; }
+  didResolve(resolvedArgument, value) {
+    if (this.shouldIgnorePromise(resolvedArgument)) { return; }
 
     this.setProperties({
       isPending: false,
@@ -180,8 +200,8 @@ export default Component.extend({
     });
   },
 
-  didReject(rejectedPromise, reason) {
-    if (this.shouldIgnorePromise(rejectedPromise)) { return; }
+  didReject(rejectedArgument, reason) {
+    if (this.shouldIgnorePromise(rejectedArgument)) { return; }
 
     this.setProperties({
       isPending: false,
@@ -199,9 +219,9 @@ export default Component.extend({
     }
   },
 
-  shouldIgnorePromise(promise) {
-    return this.isDestroyed || this.isDestroying || this.promise !== promise;
+  shouldIgnorePromise(argument) {
+    return this.isDestroyed || this.isDestroying || this.argument !== argument;
   }
 }).reopenClass({
-  positionalParams: ['promise']
+  positionalParams: ['argument']
 });
