@@ -1,6 +1,7 @@
 import { module, test } from 'qunit';
 import { setupRenderingTest } from 'ember-qunit';
 import { render, settled } from '@ember/test-helpers';
+import { helper } from '@ember/component/helper';
 import hbs from 'htmlbars-inline-precompile';
 import Ember from 'ember';
 import RSVP from 'rsvp';
@@ -98,6 +99,59 @@ module('Integration | Component | async-await', function(hooks) {
         `);
 
         assert.dom().hasText('resolved value');
+      });
+
+      test('it can take a hash of promises as arguments', async function(assert) {
+        this.set('promiseA', Promise.resolve('valueA'));
+        this.set('promiseB', Promise.resolve('valueB'));
+        this.set('promiseC', Promise.resolve('valueC'));
+
+        await render(hbs`
+          {{#async-await (hash a=this.promiseA b=this.promiseB c=this.promiseC) as |h|}}
+            resolved {{h.a}}, {{h.b}}, {{h.c}}
+          {{/async-await}}
+        `);
+
+        assert.dom().hasText('resolved valueA, valueB, valueC');
+      });
+
+      test('it can take a mixed hash as arguments', async function(assert) {
+        this.set('promiseA', Promise.resolve('valueA'));
+        this.set('valueB', 'valueB');
+        this.set('promiseC', Promise.resolve('valueC'));
+
+        await render(hbs`
+          {{#async-await (hash a=this.promiseA b=this.valueB c=this.promiseC) as |h|}}
+            resolved {{h.a}}, {{h.b}}, {{h.c}}
+          {{/async-await}}
+        `);
+
+        assert.dom().hasText('resolved valueA, valueB, valueC');
+      });
+
+      test('it can take an object as the argument', async function(assert) {
+        let obj = {
+          toString() { return 'fancy object'; }
+        };
+
+        this.set('value', obj);
+
+        let captured;
+
+        this.owner.register('helper:capture', helper(function([value]) {
+          captured = value;
+          return value;
+        }));
+
+        // Expect a straight pass-through
+        await render(hbs`
+          {{#async-await this.value as |v|}}
+            resolved {{capture v}}
+          {{/async-await}}
+        `);
+
+        assert.dom().hasText('resolved fancy object');
+        assert.strictEqual(captured, obj);
       });
 
       test('it can render rejected promise', async function(assert) {
