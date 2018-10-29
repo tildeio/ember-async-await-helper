@@ -21,7 +21,11 @@ function DEFAULT_REJECTION_HANDLER(reason) {
     error.reason = reason;
     throw error;
   } catch(error) {
-    Ember.onerror(error);
+    if (typeof Ember.onerror === 'function') {
+      Ember.onerror(error);
+    } else {
+      console.assert(false, error); // eslint-disable-line no-console
+    }
   }
 }
 

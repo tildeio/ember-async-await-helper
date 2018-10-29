@@ -448,6 +448,48 @@ module('Integration | Component | async-await', function(hooks) {
 
         assert.dom().hasText('resolved value');
       });
+
+      module('with no Ember.onerror', function(hooks) {
+        hooks.beforeEach(function(assert) {
+          // NOTE: this gets reset in the outer module
+          Ember.onerror = undefined;
+
+          expectRejection = async (reason, callback) => {
+            let called = 0;
+            let _consoleAssert = console.assert; // eslint-disable-line no-console
+
+            try {
+              console.assert = (_boolean, error) => { // eslint-disable-line no-console
+                called++;
+                assert.ok(error instanceof Error, 'it should be an error');
+                assert.equal(typeof error.stack, 'string', 'it should have a stack trace');
+                assert.equal(error.message, `Unhandled promise rejection in {{#async-await}}: ${reason}`);
+                assert.equal(error.reason, reason);
+              };
+
+              await callback();
+              await settled();
+            } finally {
+              assert.equal(called, 1, 'expected exactly one rejection');
+              console.assert = _consoleAssert; // eslint-disable-line no-console
+            }
+          };
+        });
+
+        test('if Ember.onerror is undefined, it console.asserts if the promise is rejecte', async function(assert) {
+          this.set('promise', makeRejectedPromise('promise rejected'));
+
+          await expectRejection('promise rejected', () =>
+            render(hbs`
+              {{#async-await this.promise as |value|}}
+                resolved {{value}}
+              {{/async-await}}
+            `)
+          );
+
+          assert.dom().hasText('');
+        });
+      });
     });
   }
 
