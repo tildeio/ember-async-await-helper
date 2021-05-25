@@ -1,3 +1,7 @@
+/* eslint-disable ember/no-component-lifecycle-hooks */
+/* eslint-disable ember/no-classic-classes */
+/* eslint-disable ember/no-classic-components */
+
 import { VERSION } from '@ember/version';
 import Component from '@ember/component';
 import { bind } from '@ember/runloop';
@@ -17,10 +21,12 @@ function UNINITIALIZED() {}
 
 function DEFAULT_REJECTION_HANDLER(reason) {
   try {
-    let error = new Error(`Unhandled promise rejection in {{#async-await}}: ${reason}`);
+    let error = new Error(
+      `Unhandled promise rejection in {{#async-await}}: ${reason}`
+    );
     error.reason = reason;
     throw error;
-  } catch(error) {
+  } catch (error) {
     if (typeof Ember.onerror === 'function') {
       Ember.onerror(error);
     } else {
@@ -34,7 +40,9 @@ let hashProto;
 if (VERSION.startsWith('2.')) {
   // Glimmer in older version of Ember does some weird things in creating an empty "hash",
   // so we have to jump through some hoops to get the correct prototype.
-  hashProto = Object.getPrototypeOf(Ember.__loader.require('@glimmer/util').dict());
+  hashProto = Object.getPrototypeOf(
+    Ember.__loader.require('@glimmer/util').dict()
+  );
 } else {
   // The `hash` helper creates an object with `Object.create(null)` which will have no
   // prototype.
@@ -42,7 +50,9 @@ if (VERSION.startsWith('2.')) {
 }
 
 function isHash(value) {
-  return typeof value === 'object' && Object.getPrototypeOf(value) === hashProto;
+  return (
+    typeof value === 'object' && Object.getPrototypeOf(value) === hashProto
+  );
 }
 
 /**
@@ -171,7 +181,9 @@ export default Component.extend({
   },
 
   didReceiveArgument(argument) {
-    if (argument === this.awaited) { return; }
+    if (argument === this.awaited) {
+      return;
+    }
 
     this.setProperties({
       awaited: argument,
@@ -180,7 +192,7 @@ export default Component.extend({
       isResolved: false,
       isRejected: false,
       resolvedValue: UNINITIALIZED(),
-      rejectReason: UNINITIALIZED()
+      rejectReason: UNINITIALIZED(),
     });
 
     let target = isHash(argument) ? RSVP.hash(argument) : argument;
@@ -192,7 +204,9 @@ export default Component.extend({
   },
 
   didResolve(resolvedArgument, value) {
-    if (this.shouldIgnorePromise(resolvedArgument)) { return; }
+    if (this.shouldIgnorePromise(resolvedArgument)) {
+      return;
+    }
 
     this.setProperties({
       isPending: false,
@@ -200,12 +214,14 @@ export default Component.extend({
       isResolved: true,
       isRejected: false,
       resolvedValue: value,
-      rejectReason: UNINITIALIZED()
+      rejectReason: UNINITIALIZED(),
     });
   },
 
   didReject(rejectedArgument, reason) {
-    if (this.shouldIgnorePromise(rejectedArgument)) { return; }
+    if (this.shouldIgnorePromise(rejectedArgument)) {
+      return;
+    }
 
     this.setProperties({
       isPending: false,
@@ -213,7 +229,7 @@ export default Component.extend({
       isResolved: false,
       isRejected: true,
       resolvedValue: UNINITIALIZED(),
-      rejectReason: reason
+      rejectReason: reason,
     });
 
     let { onReject } = this;
@@ -225,7 +241,7 @@ export default Component.extend({
 
   shouldIgnorePromise(argument) {
     return this.isDestroyed || this.isDestroying || this.argument !== argument;
-  }
+  },
 }).reopenClass({
-  positionalParams: ['argument']
+  positionalParams: ['argument'],
 });

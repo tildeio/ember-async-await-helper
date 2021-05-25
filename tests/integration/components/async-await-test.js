@@ -6,16 +6,16 @@ import hbs from 'htmlbars-inline-precompile';
 import Ember from 'ember';
 import RSVP from 'rsvp';
 
-module('Integration | Component | async-await', function(hooks) {
+module('Integration | Component | async-await', function (hooks) {
   setupRenderingTest(hooks);
 
-  test('it does not produce a wrapper element', async function(assert) {
+  test('it does not produce a wrapper element', async function (assert) {
     await render(hbs`{{#async-await "unused"}}{{/async-await}}`);
 
     assert.dom('div', this.element).doesNotExist();
   });
 
-  test('it can render non-promise values', async function(assert) {
+  test('it can render non-promise values', async function (assert) {
     await render(hbs`
       {{#async-await "plain value" as |value|}}
         resolved {{value}}
@@ -53,11 +53,11 @@ module('Integration | Component | async-await', function(hooks) {
       return promise;
     }
 
-    module(label, function(hooks) {
-      hooks.beforeEach(function(assert) {
+    module(label, function (hooks) {
+      hooks.beforeEach(function (assert) {
         _onerror = Ember.onerror;
 
-        let failOnError = error => {
+        let failOnError = (error) => {
           assert.ok(false, `Unexpected error: ${error}`);
         };
 
@@ -68,11 +68,18 @@ module('Integration | Component | async-await', function(hooks) {
           let _onerror = Ember.onerror;
 
           try {
-            Ember.onerror = error => {
+            Ember.onerror = (error) => {
               called++;
               assert.ok(error instanceof Error, 'it should be an error');
-              assert.equal(typeof error.stack, 'string', 'it should have a stack trace');
-              assert.equal(error.message, `Unhandled promise rejection in {{#async-await}}: ${reason}`);
+              assert.equal(
+                typeof error.stack,
+                'string',
+                'it should have a stack trace'
+              );
+              assert.equal(
+                error.message,
+                `Unhandled promise rejection in {{#async-await}}: ${reason}`
+              );
               assert.equal(error.reason, reason);
             };
 
@@ -85,11 +92,11 @@ module('Integration | Component | async-await', function(hooks) {
         };
       });
 
-      hooks.afterEach(function() {
+      hooks.afterEach(function () {
         Ember.onerror = _onerror;
       });
 
-      test('it can render resolved promise', async function(assert) {
+      test('it can render resolved promise', async function (assert) {
         this.set('promise', Promise.resolve('value'));
 
         await render(hbs`
@@ -101,7 +108,7 @@ module('Integration | Component | async-await', function(hooks) {
         assert.dom().hasText('resolved value');
       });
 
-      test('it can take a hash of promises as arguments', async function(assert) {
+      test('it can take a hash of promises as arguments', async function (assert) {
         this.set('promiseA', Promise.resolve('valueA'));
         this.set('promiseB', Promise.resolve('valueB'));
         this.set('promiseC', Promise.resolve('valueC'));
@@ -115,7 +122,7 @@ module('Integration | Component | async-await', function(hooks) {
         assert.dom().hasText('resolved valueA, valueB, valueC');
       });
 
-      test('it can take a mixed hash as arguments', async function(assert) {
+      test('it can take a mixed hash as arguments', async function (assert) {
         this.set('promiseA', Promise.resolve('valueA'));
         this.set('valueB', 'valueB');
         this.set('promiseC', Promise.resolve('valueC'));
@@ -129,19 +136,24 @@ module('Integration | Component | async-await', function(hooks) {
         assert.dom().hasText('resolved valueA, valueB, valueC');
       });
 
-      test('it can take an object as the argument', async function(assert) {
+      test('it can take an object as the argument', async function (assert) {
         let obj = {
-          toString() { return 'fancy object'; }
+          toString() {
+            return 'fancy object';
+          },
         };
 
         this.set('value', obj);
 
         let captured;
 
-        this.owner.register('helper:capture', helper(function([value]) {
-          captured = value;
-          return value;
-        }));
+        this.owner.register(
+          'helper:capture',
+          helper(function ([value]) {
+            captured = value;
+            return value;
+          })
+        );
 
         // Expect a straight pass-through
         await render(hbs`
@@ -154,7 +166,7 @@ module('Integration | Component | async-await', function(hooks) {
         assert.strictEqual(captured, obj);
       });
 
-      test('it can render rejected promise', async function(assert) {
+      test('it can render rejected promise', async function (assert) {
         this.set('promise', makeRejectedPromise('promise rejected'));
 
         await expectRejection('promise rejected', () =>
@@ -168,7 +180,7 @@ module('Integration | Component | async-await', function(hooks) {
         assert.dom().hasText('');
       });
 
-      test('it can render eventually resolved promise', async function(assert) {
+      test('it can render eventually resolved promise', async function (assert) {
         let { promise, resolve } = makePromise();
 
         this.set('promise', promise);
@@ -187,7 +199,7 @@ module('Integration | Component | async-await', function(hooks) {
         assert.dom().hasText('resolved value');
       });
 
-      test('it renders the inverse block while the promise is pending', async function(assert) {
+      test('it renders the inverse block while the promise is pending', async function (assert) {
         let { promise, resolve } = makePromise();
 
         this.set('promise', promise);
@@ -208,7 +220,7 @@ module('Integration | Component | async-await', function(hooks) {
         assert.dom().doesNotContainText('pending...');
       });
 
-      test('it remains in the inverse block if the promise rejects', async function(assert) {
+      test('it remains in the inverse block if the promise rejects', async function (assert) {
         this.set('promise', makeRejectedPromise('promise rejected'));
 
         await expectRejection('promise rejected', () =>
@@ -224,7 +236,7 @@ module('Integration | Component | async-await', function(hooks) {
         assert.dom().hasText('pending...');
       });
 
-      test('it calls Ember.onerror by default when the promise rejects', async function(assert) {
+      test('it calls Ember.onerror by default when the promise rejects', async function (assert) {
         let { promise, reject } = makePromise();
 
         this.set('promise', promise);
@@ -246,14 +258,14 @@ module('Integration | Component | async-await', function(hooks) {
         assert.dom().hasText('pending...');
       });
 
-      test('it calls onReject when the promise rejects', async function(assert) {
+      test('it calls onReject when the promise rejects', async function (assert) {
         let { promise, reject } = makePromise();
 
         this.set('promise', promise);
 
         let called = 0;
 
-        this.set('onReject', reason => {
+        this.set('onReject', (reason) => {
           called++;
           assert.equal(reason, 'promise rejected');
         });
@@ -276,7 +288,7 @@ module('Integration | Component | async-await', function(hooks) {
         assert.equal(called, 1);
       });
 
-      test('it silences the rejection when onReject is set to null', async function(assert) {
+      test('it silences the rejection when onReject is set to null', async function (assert) {
         let { promise, reject } = makePromise();
 
         this.set('promise', promise);
@@ -297,7 +309,7 @@ module('Integration | Component | async-await', function(hooks) {
         assert.dom().hasText('pending...');
       });
 
-      test('it resets its state when the promise changes', async function(assert) {
+      test('it resets its state when the promise changes', async function (assert) {
         let { promise: first, resolve: resolveFirst } = makePromise('first');
 
         this.set('promise', first);
@@ -310,12 +322,19 @@ module('Integration | Component | async-await', function(hooks) {
           {{/async-await}}
         `);
 
-        assert.dom().hasText('pending...', 'shows inverse block while awaiting first promise');
+        assert
+          .dom()
+          .hasText(
+            'pending...',
+            'shows inverse block while awaiting first promise'
+          );
 
         resolveFirst('first');
         await settled();
 
-        assert.dom().hasText('resolved first', 'shows resolved value for first promise');
+        assert
+          .dom()
+          .hasText('resolved first', 'shows resolved value for first promise');
 
         // We will resolve this later, after switching out the promise
         let { promise: second, resolve: resolveSecond } = makePromise('second');
@@ -323,7 +342,12 @@ module('Integration | Component | async-await', function(hooks) {
         this.set('promise', second);
         await settled();
 
-        assert.dom().hasText('pending...', 'shows inverse block while awaiting second promise');
+        assert
+          .dom()
+          .hasText(
+            'pending...',
+            'shows inverse block while awaiting second promise'
+          );
 
         // We will reject this later, after switching out the promise
         let { promise: third, reject: rejectThird } = makePromise('third');
@@ -331,39 +355,66 @@ module('Integration | Component | async-await', function(hooks) {
         this.set('promise', third);
         await settled();
 
-        assert.dom().hasText('pending...', 'shows inverse block while awaiting third promise');
+        assert
+          .dom()
+          .hasText(
+            'pending...',
+            'shows inverse block while awaiting third promise'
+          );
 
         this.set('promise', Promise.resolve('fourth'));
         await settled();
 
-        assert.dom().hasText('resolved fourth', 'shows resolved value for fourth promise');
+        assert
+          .dom()
+          .hasText(
+            'resolved fourth',
+            'shows resolved value for fourth promise'
+          );
 
         await expectRejection('rejected fifth', () => {
           this.set('promise', makeRejectedPromise('rejected fifth'));
         });
 
-        assert.dom().hasText('pending...', 'shows inverse block while awaiting fifth promise');
+        assert
+          .dom()
+          .hasText(
+            'pending...',
+            'shows inverse block while awaiting fifth promise'
+          );
 
         // Resolving a no-longer-relevant promise should be no-op
         resolveSecond('second');
         await settled();
 
-        assert.dom().hasText('pending...', 'shows inverse block even though second promise was resolved');
+        assert
+          .dom()
+          .hasText(
+            'pending...',
+            'shows inverse block even though second promise was resolved'
+          );
 
         // Rejecting a no-longer-relevant promise should not error
         rejectThird('rejected third');
         await settled();
 
-        assert.dom().hasText('pending...', 'shows inverse block even though third promise was rejected');
+        assert
+          .dom()
+          .hasText(
+            'pending...',
+            'shows inverse block even though third promise was rejected'
+          );
 
         // Recycling an already-resolved promise is the same as Promise.resolve
         this.set('promise', first);
         await settled();
 
-        assert.dom().hasText('resolved first', 'shows resolved value for first promise');
+        assert
+          .dom()
+          .hasText('resolved first', 'shows resolved value for first promise');
       });
 
-      test('does nothing when the promise resolves if the component has been destroyed', async function(assert) {
+      test('does nothing when the promise resolves if the component has been destroyed', async function (assert) {
         let { promise, resolve } = makePromise();
 
         this.set('promise', promise);
@@ -389,7 +440,7 @@ module('Integration | Component | async-await', function(hooks) {
         assert.dom().hasText('');
       });
 
-      test('does nothing when the promise rejects if the component has been destroyed', async function(assert) {
+      test('does nothing when the promise rejects if the component has been destroyed', async function (assert) {
         let { promise, reject } = makePromise();
 
         this.set('promise', promise);
@@ -415,7 +466,7 @@ module('Integration | Component | async-await', function(hooks) {
         assert.dom().hasText('');
       });
 
-      test('it does not rerender infinitely', async function(assert) {
+      test('it does not rerender infinitely', async function (assert) {
         this.set('promise', Promise.resolve('value'));
 
         await render(hbs`
@@ -449,8 +500,8 @@ module('Integration | Component | async-await', function(hooks) {
         assert.dom().hasText('resolved value');
       });
 
-      module('with no Ember.onerror', function(hooks) {
-        hooks.beforeEach(function(assert) {
+      module('with no Ember.onerror', function (hooks) {
+        hooks.beforeEach(function (assert) {
           // NOTE: this gets reset in the outer module
           Ember.onerror = undefined;
 
@@ -459,11 +510,19 @@ module('Integration | Component | async-await', function(hooks) {
             let _consoleAssert = console.assert; // eslint-disable-line no-console
 
             try {
-              console.assert = (_boolean, error) => { // eslint-disable-line no-console
+              console.assert = (_boolean, error) => {
+                // eslint-disable-line no-console
                 called++;
                 assert.ok(error instanceof Error, 'it should be an error');
-                assert.equal(typeof error.stack, 'string', 'it should have a stack trace');
-                assert.equal(error.message, `Unhandled promise rejection in {{#async-await}}: ${reason}`);
+                assert.equal(
+                  typeof error.stack,
+                  'string',
+                  'it should have a stack trace'
+                );
+                assert.equal(
+                  error.message,
+                  `Unhandled promise rejection in {{#async-await}}: ${reason}`
+                );
                 assert.equal(error.reason, reason);
               };
 
@@ -476,7 +535,7 @@ module('Integration | Component | async-await', function(hooks) {
           };
         });
 
-        test('if Ember.onerror is undefined, it console.asserts if the promise is rejecte', async function(assert) {
+        test('if Ember.onerror is undefined, it console.asserts if the promise is rejecte', async function (assert) {
           this.set('promise', makeRejectedPromise('promise rejected'));
 
           await expectRejection('promise rejected', () =>
